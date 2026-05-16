@@ -1,0 +1,105 @@
+package com.ga.capstone.services;
+
+import com.ga.capstone.enums.UserStatus;
+import com.ga.capstone.exceptions.AuthErrorException;
+import com.ga.capstone.exceptions.ResourceAlreadyExistsException;
+import com.ga.capstone.exceptions.ResourceNotFoundException;
+import com.ga.capstone.models.Role;
+import com.ga.capstone.models.User;
+import com.ga.capstone.repositories.RoleRepository;
+import com.ga.capstone.repositories.UserRepository;
+import com.ga.capstone.security.JwtUtils;
+import com.ga.capstone.security.MyUserDetails;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    /**
+     *
+     * @param user
+     * @return
+     */
+    public User createUser(User user) {
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new ResourceAlreadyExistsException("User with email : " + user.getEmail() + "already exists");
+        }
+
+        user.setDeleted(false);
+        user.setEmailVerified(true);
+        if (user.getStatus() == null) user.setStatus(UserStatus.PENDING);
+
+        if (user.getRole() == null || user.getRole().getId() == null) {
+            throw new ResourceNotFoundException("Role is required");
+        }
+
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        Role role = roleRepository.findById(user.getRole().getId()).orElseThrow(() -> new ResourceNotFoundException("Role with id " + user.getRole().getId() + " not found"));
+        user.setRole(role);
+
+        User newUser = userRepository.save(user);
+
+        // Handle email service for activating the account
+        return newUser;
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User with id : " + id + " not found"));
+    }
+
+    public User updateUser(Long userId, User user) {
+        User currentUser = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with id : " + userId + " not found"));
+
+        if (!currentUser.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(user.getEmail())) {
+                throw new ResourceAlreadyExistsException("User with email : " + user.getEmail() + "already exists");
+            }
+            currentUser.setEmail(user.getEmail());
+        }
+
+        if (user.getRole() != null && user.getRole().getId() != null) {
+            if (!currentUser.getRole().getId().equals(user.getRole().getId())) {
+                currentUser.setRole(roleRepository.findById(user.getRole().getId()).orElseThrow(() -> new ResourceNotFoundException("Role with id : " + user.getRole().getId() + " not found")));
+            }
+        }
+
+        if (user.getStatus() != null && !currentUser.getStatus().equals(user.getStatus())) {
+            currentUser.setStatus(user.getStatus());
+        }
+
+        return userRepository.save(currentUser);
+
+    }
+
+    public User findUserByEmailAddress(String email) {
+        return userRepository.findUserByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User with email : " + email + " not found"));
+    }
+
+    public User deleteUserById(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User with id: " + id + " not found"));
+
+        if (user.isDeleted()) {
+            return user;
+        }
+
+        user.setDeleted(true);
+        return userRepository.save(user);
+    }
+}

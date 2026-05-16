@@ -10,6 +10,7 @@ import com.ga.capstone.models.User;
 import com.ga.capstone.repositories.CourseRepository;
 import com.ga.capstone.repositories.EnrollmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,7 +49,12 @@ public class EnrollmentService {
         enrollment.setCourse(course);
         enrollment.setStatus(EnrollmentStatus.ACTIVE);
 
-        return enrollmentRepository.save(enrollment);
+        try {
+            return enrollmentRepository.save(enrollment);
+        } catch (DataIntegrityViolationException ex) {
+            // Race condition: another request enrolled between our check and save
+            throw new ResourceAlreadyExistsException("You are already enrolled in this course");
+        }
     }
 
     /**

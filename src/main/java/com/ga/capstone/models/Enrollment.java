@@ -42,6 +42,9 @@ public class Enrollment {
     @Enumerated(EnumType.STRING)
     private EnrollmentStatus status = EnrollmentStatus.ACTIVE;
 
+    @Version
+    private Long version;
+
     @CreationTimestamp
     @Column(updatable = false, name = "enrolled_at")
     private LocalDateTime enrolledAt;

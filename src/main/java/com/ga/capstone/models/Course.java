@@ -60,6 +60,9 @@ public class Course {
     @Column(nullable = false)
     private boolean deleted = false;
 
+    @Version
+    private Long version;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;

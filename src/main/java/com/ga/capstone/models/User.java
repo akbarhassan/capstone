@@ -55,6 +55,9 @@ public class User {
     @Column(nullable = false)
     private boolean deleted;
 
+    @Version
+    private Long version;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;

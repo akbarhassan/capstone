@@ -7,7 +7,9 @@ import com.ga.capstone.exceptions.AuthErrorException;
 import com.ga.capstone.exceptions.ResourceAlreadyExistsException;
 import com.ga.capstone.exceptions.ResourceNotFoundException;
 import com.ga.capstone.models.*;
+import com.ga.capstone.repositories.EmailVerificationTokenRepository;
 import com.ga.capstone.repositories.PasswordHistoryRepository;
+import com.ga.capstone.repositories.PasswordResetTokenRepository;
 import com.ga.capstone.repositories.RoleRepository;
 import com.ga.capstone.repositories.UserRepository;
 import com.ga.capstone.security.JwtUtils;
@@ -35,6 +37,8 @@ public class AuthService {
     private final EmailVerificationTokenService tokenService;
     private final PasswordResetTokenService resetTokenService;
     private final PasswordHistoryRepository passwordHistoryRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Value("${app.auth.default-role-id:2}")
     private Long defaultRoleId;
@@ -122,9 +126,13 @@ public class AuthService {
                 () -> new AuthErrorException("Invalid or expired verification token. Please register again.")
         );
 
-        User user = verificationToken.getUser();
-        tokenService.markTokenAsUsed(token);
+        // Atomically mark token as used — prevents double-use race condition
+        int updated = emailVerificationTokenRepository.markAsUsedAtomically(token);
+        if (updated == 0) {
+            throw new AuthErrorException("Token has already been used.");
+        }
 
+        User user = verificationToken.getUser();
         user.setEmailVerified(true);
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
@@ -181,6 +189,12 @@ public class AuthService {
                         "Invalid or expired password reset token"
                 ));
 
+        // Atomically mark token as used — prevents double-use race condition
+        int updated = passwordResetTokenRepository.markAsUsedAtomically(token);
+        if (updated == 0) {
+            throw new AuthErrorException("Token has already been used.");
+        }
+
         User user = resetToken.getUser();
 
         if (isPasswordRecentlyUsed(user, newPassword)) {
@@ -193,8 +207,6 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
-        resetTokenService.markTokenAsUsed(token);
     }
 
     /**

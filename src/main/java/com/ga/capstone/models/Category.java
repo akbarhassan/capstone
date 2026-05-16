@@ -44,6 +44,9 @@ public class Category {
     @JsonIgnore
     private Set<Course> courses = new HashSet<>();
 
+    @Version
+    private Long version;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;

@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: learnhub-db
+    environment:
+      POSTGRES_DB: capstone
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: learnhub-app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/capstone
+      DB_USERNAME: postgres
+      DB_PASSWORD: 12345678
+      SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-secure-secret-key-at-least-256-bits}
+      JWT_EXPIRATION_MS: 86400000
+      MAILER_USERNAME: ${MAILER_USERNAME:-test@gmail.com}
+      MAILER_PASSWORD: ${MAILER_PASSWORD:-test}
+      MAIL_FROM: ${MAIL_FROM:-noreply@learnhub.com}
+      RESET_PASSWORD_COUNT: 10
+      PASSWORD_RESET_BASE_URL: http://localhost:8080
+      PASSWORD_RESET_EXPIRY_HOURS: 1
+      VERIFICATION_BASE_URL: http://localhost:8080
+      VERIFICATION_TOKEN_EXPIRY_HOURS: 24
+      DEFAULT_ROLE_ID: 2
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  postgres_data:
+  uploads:

@@ -2,6 +2,7 @@ package com.ga.capstone.models;
 
 
 import com.ga.capstone.enums.EnrollmentStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,6 +33,7 @@ public class Enrollment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties("role")
     private User student;
 
     @ManyToOne(fetch = FetchType.LAZY)

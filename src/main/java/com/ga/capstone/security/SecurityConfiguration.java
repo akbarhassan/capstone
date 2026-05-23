@@ -25,6 +25,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration {
     private MyUserDetailsService myUserDetailsService;
     private JwtRequestFilter jwtRequestFilter;
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private RestAccessDeniedHandler restAccessDeniedHandler;
 
     @Autowired
     public void setMyUserDetailsService(MyUserDetailsService myUserDetailsService) {
@@ -34,6 +36,16 @@ public class SecurityConfiguration {
     @Autowired
     public void setJwtRequestFilter(JwtRequestFilter jwtRequestFilter) {
         this.jwtRequestFilter = jwtRequestFilter;
+    }
+
+    @Autowired
+    public void setRestAuthenticationEntryPoint(RestAuthenticationEntryPoint restAuthenticationEntryPoint) {
+        this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
+    }
+
+    @Autowired
+    public void setRestAccessDeniedHandler(RestAccessDeniedHandler restAccessDeniedHandler) {
+        this.restAccessDeniedHandler = restAccessDeniedHandler;
     }
 
     /**
@@ -60,6 +72,10 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/auth/login",

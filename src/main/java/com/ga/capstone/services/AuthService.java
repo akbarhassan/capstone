@@ -102,7 +102,7 @@ public class AuthService {
             throw new AuthErrorException("Please verify your email before logging in. Check your inbox.");
         }
 
-        if (Boolean.TRUE.equals(user.isDeleted())) {
+        if (Boolean.TRUE.equals(user.getDeleted())) {
             throw new AuthErrorException("Account has been deleted");
         }
 

@@ -38,7 +38,6 @@ public class Course {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column
     private String thumbnail;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -57,8 +56,8 @@ public class Course {
     @JsonIgnore
     private List<Enrollment> enrollments = new ArrayList<>();
 
-    @Column(nullable = false)
-    private boolean deleted = false;
+//    @Column(nullable = false)
+    private Boolean deleted = false;
 
     @Version
     private Long version;

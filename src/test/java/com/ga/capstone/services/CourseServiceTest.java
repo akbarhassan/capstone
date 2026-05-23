@@ -166,7 +166,7 @@ public class CourseServiceTest {
 
         courseService.softDeleteCourse(1L);
 
-        assertThat(course1.isDeleted()).isTrue();
+        assertThat(course1.getDeleted()).isTrue();
 
         verify(courseRepository, times(1)).findByIdAndDeletedFalse(1L);
         verify(courseRepository, times(1)).save(course1);

@@ -95,7 +95,7 @@ public class UserService {
     public User deleteUserById(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User with id: " + id + " not found"));
 
-        if (user.isDeleted()) {
+        if (Boolean.TRUE.equals(user.getDeleted())) {
             return user;
         }
 

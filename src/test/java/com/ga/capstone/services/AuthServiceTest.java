@@ -121,7 +121,7 @@ public class AuthServiceTest {
         assertThat(result.getRole()).isEqualTo(defaultRole);
         assertThat(result.getStatus()).isEqualTo(UserStatus.PENDING);
         assertThat(result.getEmailVerified()).isFalse();
-        assertThat(result.isDeleted()).isFalse();
+        assertThat(result.getDeleted()).isFalse();
 
         verify(userRepository, times(1)).existsByEmail("newuser@test.com");
         verify(roleRepository, times(1)).findById(2L);

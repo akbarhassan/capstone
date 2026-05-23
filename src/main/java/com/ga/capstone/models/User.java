@@ -38,7 +38,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
@@ -53,7 +53,7 @@ public class User {
     private List<PasswordHistory> passwordHistories = new ArrayList<>();
 
     @Column(nullable = false)
-    private boolean deleted;
+    private Boolean deleted = false;
 
     @Version
     private Long version;

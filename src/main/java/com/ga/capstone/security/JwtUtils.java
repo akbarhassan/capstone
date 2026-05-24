@@ -1,13 +1,16 @@
 package com.ga.capstone.security;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.logging.Logger;
-
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Service
 public class JwtUtils {
@@ -20,23 +23,31 @@ public class JwtUtils {
     @Value("${jwt-expiration-ms}")
     private int jwtExpirationMs;
 
+    private SecretKey signingKey;
+
+    // Treat JWT_SECRET as raw UTF-8 bytes (not Base64). HS256 needs >= 32 bytes.
+    @PostConstruct
+    private void init() {
+        signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
 
     public String generateJwtToken(MyUserDetails myUserDetails) {
         return Jwts.builder()
                 .setSubject((myUserDetails.getUsername()))
                 .claim("role", myUserDetails.getRoleName())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(SignatureAlgorithm.HS256, jwtSecret)
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String getUserNameFromJwtToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(jwtSecret).build().parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token).getBody().getSubject();
     }
 
     public String getRoleNameFromJwtToken(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(jwtSecret).build().parseClaimsJws(token).getBody();
+        Claims claims = Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token).getBody();
         String role = claims.get("role", String.class);
         if (role == null) {
             throw new IllegalArgumentException("JWT missing 'role' claim");
@@ -46,7 +57,7 @@ public class JwtUtils {
 
     public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
+            Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(authToken);
             return true;
         } catch (SecurityException e) {
             logger.log(Level.SEVERE, "Invalid JWT signature: {0}", e.getMessage());
